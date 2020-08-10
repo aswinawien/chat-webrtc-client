@@ -1,5 +1,17 @@
 .App {
   text-align: center;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-areas: "chat alert";
+}
+
+
+section.chat {
+  grid-area: chat;
+}
+
+section.alert {
+  grid-area: alert;
 }
 
 .App-logo {

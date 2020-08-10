@@ -1,12 +1,27 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
+import { Provider } from 'mobx-react'
 import './index.css';
 import App from './App';
+import MessageStore from './stores/message.store'
 import * as serviceWorker from './serviceWorker';
+import AlertStore from './stores/alert.store';
+
+import 'antd/dist/antd.css';
+import RoomStore from './stores/room.store';
+
+
+const stores = {}
+
+stores.messageStore = new MessageStore()
+stores.alertStore = new AlertStore()
+stores.roomStore = new RoomStore()
 
 ReactDOM.render(
   <React.StrictMode>
-    <App />
+    <Provider {...stores}>
+      <App />
+    </Provider>
   </React.StrictMode>,
   document.getElementById('root')
 );
