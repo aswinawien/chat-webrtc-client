@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { inject, observer } from 'mobx-react'
+import { inject, observer, Observer } from 'mobx-react'
 import SocketIOClient from "socket.io-client";
 import { Alert, Tabs, Button } from 'antd';
 
@@ -24,18 +24,22 @@ class App extends React.Component {
     this.state = {
       username: '',
       text: '',
-      room: 'general'
+      room: 'general',
+      buttonText: `Join the chat`
     }
   }
 
 
   componentDidMount() {
     const userName = prompt('Please Enter your username !');
+    const { roomStore } = this.props
     this.setState({
       username: userName
     })
     socket.chat.on('messageClient', ({ sender, room, message }) => {
-      this.props.messageStore.receiveMessage({ sender, room, message })
+      if (roomStore.isMemberOfActiveRoom(room)) {
+        this.props.messageStore.receiveMessage({ sender, room, message })
+      }
     })
     socket.alert.on('alertClient', ({ message }) => {
       this.props.alertStore.receiveNotification(message)
@@ -44,6 +48,16 @@ class App extends React.Component {
 
 
   handleSwitchRoom = (room) => {
+    const { roomStore } = this.props
+    if (roomStore.isMemberOfActiveRoom(room)) {
+      this.setState({
+        buttonText: `Leave the chat`
+      })
+    } else {
+      this.setState({
+        buttonText: `Join the chat`
+      })
+    }
     this.setState({
       room
     })
@@ -55,21 +69,30 @@ class App extends React.Component {
     if (!roomStore.isMemberOfActiveRoom(room)) {
       socket.chat.emit("joinRoom", room)
       roomStore.joinRoom(room)
+      this.setState({
+        buttonText: `Leave the chat`
+      })
     } else {
       socket.chat.emit("leaveRoom", room)
       roomStore.leaveRoom(room)
+      this.setState({
+        buttonText: `Join the chat`
+      })
     }
   }
 
   handleSubmit = () => {
     const { username, text, room } = this.state
-    socket.chat.on('connection', () => {
+    const { roomStore } = this.props
+    if (roomStore.isMemberOfActiveRoom(room)) {
       socket.chat.emit("messageServer", {
         sender: username,
         room,
         message: text
       })
-    })
+    } else {
+      alert(`You must join the chatroom first before you can sending any message`)
+    }
 
     this.setState({
       text: ''
@@ -86,7 +109,7 @@ class App extends React.Component {
   }
 
   render() {
-    const { room } = this.state
+    const { room, buttonText } = this.state
     const { roomStore } = this.props
     console.log(this.props.roomStore.rooms)
     return (
@@ -107,7 +130,7 @@ class App extends React.Component {
                     )
                   )}
                 </ul>
-                <Button type="primary" onClick={this.handleJoinOrLeave.bind(this)}>{roomStore.isMemberOfActiveRoom(room) ? `Leave the chat` : `Join the chat`}</Button>
+                <Button type="primary" onClick={this.handleJoinOrLeave.bind(this)}>{buttonText}</Button>
               </TabPane>
             ))
             }
